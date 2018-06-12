@@ -1,0 +1,40 @@
+
+image: engebras/node-awscli:8-alpine
+
+variables:
+  DOMAIN: .dev.static.engebras.com.br
+  PUBLIC_URL: /$CI_PROJECT_NAME/$CI_BUILD_REF_SLUG
+
+stages:
+  - test
+  - build
+  - deploy
+
+cache:
+  paths:
+  - node_modules/
+
+Test:
+  stage: test
+  script:
+    - npm install
+    - npm run standard
+    - npm run test
+
+Build:
+  stage: build
+  artifacts:
+    paths:
+    - build/
+  script:
+    - npm install
+    - npm run build
+
+Deploy:
+  stage: deploy
+  environment:
+    name: $CI_BUILD_REF_SLUG
+    url: http://$GITLAB_USER_LOGIN$DOMAIN/$CI_PROJECT_NAME/$CI_BUILD_REF_SLUG
+  script:
+    - echo Deploy to $GITLAB_USER_LOGIN$DOMAIN$PUBLIC_URL
+    - aws s3 sync --delete ./build/ s3://$GITLAB_USER_LOGIN$DOMAIN$PUBLIC_URL/
